@@ -3,4 +3,5 @@ Flask-Login==0.6.3
 Flask-Bcrypt==1.0.1
 Flask-SQLAlchemy==3.1.1
 python-barcode==0.15.1
-pngquant==0.1.1
+gunicorn==21.2.0
+asgiref==3.8.1

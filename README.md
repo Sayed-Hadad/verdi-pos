@@ -4,7 +4,7 @@
 
 ## التشغيل السريع (Windows PowerShell)
 ```
-cd C:\Users\sayed-elhaddad\Desktop\v-system
+cd C:\Users\sayed-elhaddad\Desktop\verdi-pos
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
@@ -51,3 +51,20 @@ python app.py
 ## ملاحظات أمنية
 - غيّر `SECRET_KEY` وبيانات المدير الافتراضي.
 - لا تترك قاعدة البيانات مفتوحة للكتابة في بيئة مشتركة.
+
+## النشر على Render
+- يوجد ملف `render.yaml` يُعرّف خدمة ويب Python مع:
+	- تثبيت الحزم: `pip install -r requirements.txt`
+	- تشغيل الإنتاج: `gunicorn app:app -b 0.0.0.0:$PORT -w 2`
+	- متغير بيئة آمن `SECRET_KEY` يتم توليده تلقائيًا.
+	- خطة "Free" مدعومة. على الخطة المجانية، مساحة التخزين ليست دائمة بين عمليات النشر.
+
+### خطوات النشر
+1. ادفع الكود إلى GitHub.
+2. في Render: أنشئ "Web Service" عبر "Blueprint" باستخدام `render.yaml` من المستودع.
+3. اختر الخطة والمنطقة، واترك الأوامر الافتراضية كما هي.
+4. بعد النشر، التطبيق يستمع على منفذ `$PORT` تلقائيًا.
+
+ملاحظات:
+- على الخطة المجانية، قاعدة بيانات SQLite داخل `instance/` ستكون مؤقتة؛ قد تُفقد عند تحديث الخدمة أو إعادة نشرها. لاستخدام بيانات دائمة، أنشئ قاعدة بيانات مُدارة (مثل PostgreSQL) واضبط `DATABASE_URL` في إعدادات الخدمة.
+- إذا تم ضبط `DATABASE_URL`، سيستخدم التطبيق تلقائيًا تلك القاعدة بدلاً من SQLite.
