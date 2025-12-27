@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<div class="row g-3 h-100">
+  <!-- قسم السلة اليمين -->
+  <div class="col-lg-3">
+    <div class="card pos-panel sticky-top pos-scroll">
+      <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center rounded-top-3">
+        <span>السلة</span>
+        <span class="badge bg-danger" id="cart-count">0</span>
+      </div>
+      <div class="card-body p-2">
+        <div class="table-responsive">
+          <table class="table table-sm mb-0" id="cart-table">
+            <thead class="table-light"><tr><th>الصنف</th><th style="width:50px">كمية</th><th style="width:60px">السعر</th><th style="width:70px">الإجمالي</th><th style="width:30px"></th></tr></thead>
+            <tbody id="cart-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer bg-light rounded-bottom-3">
+        <div class="d-flex justify-content-between small mb-2"><span>المجموع</span><span id="subtotal" class="fw-bold">0.00</span></div>
+        <div class="d-flex justify-content-between small mb-2"><span>خصم</span><input id="discount" type="number" step="0.1" class="form-control form-control-sm" style="width:70px" value="0"></div>
+        <div class="d-flex justify-content-between small mb-3"><span>ضريبة</span><input id="tax" type="number" step="0.1" class="form-control form-control-sm" style="width:70px" value="0"></div>
+        <div class="d-flex justify-content-between" style="font-size:1.3rem;font-weight:700;border-top:2px solid #ddd;padding-top:10px;margin-bottom:10px">
+          <span>الإجمالي</span>
+          <span id="total">0.00</span>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">العميل</label>
+          <input id="customer-name" class="form-control form-control-sm" placeholder="اختياري">
+        </div>
+        <div class="mb-2">
+          <label class="form-label small">الهاتف</label>
+          <input id="customer-phone" class="form-control form-control-sm" placeholder="اختياري">
+        </div>
+        <button id="pay-btn" class="btn btn-primary btn-lg w-100 fw-bold pos-cta">💰 دفع</button>
+        <button id="clear-btn" class="btn btn-outline-danger btn-sm w-100 mt-2 pos-ghost">مسح السلة</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- قسم البحث والمنتجات اليسار -->
+  <div class="col-lg-9">
+    <div class="card pos-panel h-100 pos-scroll">
+      <div class="card-header bg-white border-0 pb-1">
+        <div class="row g-3 align-items-end pos-search">
+          <div class="col-md-6">
+            <label class="form-label mb-1 fw-semibold text-muted">امسح الباركود</label>
+            <div class="input-group input-group-lg">
+              <span class="input-group-text">🔍</span>
+              <input id="barcode-input" class="form-control" placeholder="اكتب أو امسح الباركود">
+            </div>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label mb-1 fw-semibold text-muted">ابحث عن منتج</label>
+            <div class="input-group input-group-lg">
+              <span class="input-group-text">🔎</span>
+              <input id="search-input" class="form-control" placeholder="اكتب اسم المنتج أو كود سريع">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card-body p-2">
+        <!-- قائمة المنتجات -->
+        <div id="products-list" class="row g-2"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  #products-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+  .product-card {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 14px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: #ffffff;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+  }
+  .product-card:hover {
+    border-color: var(--brand);
+    box-shadow: 0 12px 30px rgba(244, 63, 94, 0.15);
+    transform: translateY(-3px);
+  }
+  .product-card .name {
+    font-weight: 800;
+    font-size: 14px;
+    margin: 6px 0 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .product-card .price {
+    color: var(--brand);
+    font-weight: 800;
+    font-size: 15px;
+  }
+  .product-card .stock {
+    font-size: 11px;
+    color: #4b5563;
+  }
+  .product-card.low-stock {
+    border-color: #ffc107;
+    background: #fffbf0;
+  }
+  .product-card.out-of-stock {
+    border-color: #dc3545;
+    background: #fff5f5;
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .pos-search .input-group-text {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-inline-end: none;
+    border-radius: 14px 0 0 14px;
+    padding-inline: 14px;
+  }
+  .pos-search .form-control {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 0 14px 14px 0;
+    padding-inline: 14px;
+  }
+  .pos-search .form-control:focus {
+    box-shadow: 0 0 0 0.15rem rgba(244,63,94,0.15);
+    border-color: var(--brand);
+  }
+</style>
+
+<script src="{{ url_for('static', filename='js/pos.js', v='20251227') }}"></script>
+{% endblock %}

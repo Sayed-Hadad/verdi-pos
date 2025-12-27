@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="card">
+  <div class="card-header">الإعدادات</div>
+  <div class="card-body">
+    <form method="post" class="row g-3">
+      <div class="col-md-8">
+        <label class="form-label">مسار اللوجو</label>
+        <input name="logo_path" class="form-control" value="{{ logo_path }}" placeholder="C:/logo.png أو /static/img/logo.png">
+      </div>
+      <div class="col-md-4 d-flex align-items-end">
+        <button class="btn btn-primary w-100">حفظ</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

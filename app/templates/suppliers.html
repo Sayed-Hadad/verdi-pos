@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-success text-white">➕ إضافة تاجر جديد</div>
+      <div class="card-body">
+        <form method="post">
+          <div class="mb-2">
+            <label class="form-label">اسم التاجر</label>
+            <input class="form-control" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">هاتف</label>
+            <input class="form-control" name="phone">
+          </div>
+          <button class="btn btn-success w-100">حفظ</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light">🤝 قائمة التجار</div>
+      <div class="card-body p-0">
+        <table class="table table-striped mb-0 align-middle">
+          <thead class="table-light">
+            <tr>
+              <th>#</th><th>الاسم</th><th>الهاتف</th><th>الرصيد</th><th class="text-center" style="width:140px">إجراءات</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in suppliers %}
+            <tr>
+              <td>{{ s.id }}</td>
+              <td>{{ s.name }}</td>
+              <td>{{ s.phone or '-' }}</td>
+              <td>{{ '%.2f'|format(s.balance or 0) }} ج.م</td>
+              <td class="text-center">
+                <button class="btn btn-outline-primary btn-sm edit-supplier" data-id="{{ s.id }}" data-name="{{ s.name }}" data-phone="{{ s.phone or '' }}">تعديل</button>
+                <form class="d-inline" method="post" action="{{ url_for('main.supplier_delete', sid=s.id) }}" onsubmit="return confirm('حذف التاجر؟');">
+                  <button class="btn btn-outline-danger btn-sm">حذف</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5" class="text-center p-3">لا يوجد تجار بعد</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal تعديل تاجر -->
+<div class="modal fade" id="editSupplierModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تعديل تاجر</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form method="post" id="edit-supplier-form">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">اسم التاجر</label>
+            <input class="form-control" name="name" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">هاتف</label>
+            <input class="form-control" name="phone">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+          <button class="btn btn-primary" type="submit">حفظ</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.edit-supplier').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const form = document.getElementById('edit-supplier-form');
+    form.action = `/suppliers/${btn.dataset.id}/update`;
+    form.name.value = btn.dataset.name;
+    form.phone.value = btn.dataset.phone;
+    const modal = new bootstrap.Modal(document.getElementById('editSupplierModal'));
+    modal.show();
+  });
+});
+</script>
+{% endblock %}

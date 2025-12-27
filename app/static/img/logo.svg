@@ -1,0 +1,11 @@
+<svg width="160" height="50" viewBox="0 0 160 50" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Verdi POS">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#2b7cff"/>
+      <stop offset="100%" stop-color="#00c9a7"/>
+    </linearGradient>
+  </defs>
+  <rect rx="10" width="160" height="50" fill="#0f172a"/>
+  <text x="20" y="31" fill="url(#g)" font-family="Segoe UI, Arial, sans-serif" font-size="22" font-weight="700">VERDI</text>
+  <text x="98" y="31" fill="#e2e8f0" font-family="Segoe UI, Arial, sans-serif" font-size="18" font-weight="600">POS</text>
+</svg>

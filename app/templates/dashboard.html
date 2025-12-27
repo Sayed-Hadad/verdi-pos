@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-3">
+    <div class="card p-3 text-center">
+      <div class="text-muted">مبيعات اليوم</div>
+      <div class="fs-4 fw-bold">{{ '%.2f'|format(sales_today) }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 text-center">
+      <div class="text-muted">عدد المنتجات</div>
+      <div class="fs-4 fw-bold">{{ total_products }}</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="card p-3 text-center">
+      <div class="text-muted">تنبيهات المخزون</div>
+      <div class="fs-4 fw-bold text-danger">{{ low_stock }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">أحدث الفواتير</div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead><tr><th>#</th><th>الكاشير</th><th>الصافي</th><th>التاريخ</th><th></th></tr></thead>
+      <tbody>
+        {% for s in recent_sales %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td>{{ s.cashier }}</td>
+          <td>{{ '%.2f'|format(s.net_total) }}</td>
+          <td>{{ s.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td><a href="{{ url_for('main.invoice_view', sale_id=s.id) }}" class="btn btn-sm btn-outline-primary">عرض</a></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center p-3">لا توجد فواتير بعد</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

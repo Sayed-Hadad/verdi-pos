@@ -1,0 +1,380 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-9">
+    <div class="card">
+      <div class="card-header bg-primary text-white">📦 اختر المنتجات لطباعة الباركود</div>
+      <div class="card-body p-0">
+        <div class="p-3 border-bottom">
+          <input id="search-product" class="form-control" placeholder="🔍 بحث سريع عن المنتج...">
+        </div>
+        <table class="table mb-0">
+          <thead class="table-light">
+            <tr>
+              <th style="width:40px"><input type="checkbox" id="select-all" title="تحديد الكل"></th>
+              <th>#</th>
+              <th>الاسم</th>
+              <th>السعر</th>
+              <th>المخزون</th>
+              <th>الكمية</th>
+              <th>الإجمالي</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in products %}
+            <tr data-product-id="{{ p.id }}">
+              <td>
+                <input type="checkbox" class="product-checkbox" data-product-id="{{ p.id }}" data-product-name="{{ p.name }}" data-product-barcode="{{ p.barcode }}" data-product-price="{{ p.price }}">
+              </td>
+              <td>{{ p.id }}</td>
+              <td><strong>{{ p.name }}</strong><br><code style="font-size:10px">{{ p.barcode }}</code></td>
+              <td>{{ '%.2f'|format(p.price) }} ج.م</td>
+              <td><span class="badge bg-info">{{ p.stock_qty }}</span></td>
+              <td>
+                <input type="number" class="form-control form-control-sm barcode-qty" min="1" max="100" value="1" data-product-id="{{ p.id }}" style="width:80px">
+              </td>
+              <td class="total-qty" data-product-id="{{ p.id }}">1</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="7" class="text-center p-3">لا توجد منتجات</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- شريط جانبي -->
+  <div class="col-md-3">
+    <div class="card sticky-top">
+      <div class="card-header bg-success text-white">🖨️ قائمة الطباعة</div>
+      <div class="card-body p-0" style="max-height:600px;overflow-y:auto">
+        <div id="print-list" class="p-3"></div>
+      </div>
+      <div class="card-footer">
+        <div class="mb-2">
+          <small class="text-muted">عدد الملصقات: <strong id="total-labels">0</strong></small>
+        </div>
+        <button class="btn btn-success w-100 mb-2" id="print-all-btn" disabled>
+          🖨️ طباعة الآن
+        </button>
+        <button class="btn btn-outline-danger w-100" id="clear-print-btn" disabled>
+          🗑️ مسح القائمة
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- نافذة الطباعة المخفية -->
+<iframe id="print-frame" style="display:none"></iframe>
+
+<script>
+let printList = [];
+
+// تحديث الكمية
+$(".barcode-qty").on("change", function() {
+  const productId = $(this).data("product-id");
+  const qty = Math.max(1, parseInt($(this).val()) || 1);
+  const totalCell = $(`.total-qty[data-product-id="${productId}"]`);
+  totalCell.text(qty);
+});
+
+// تحديد/إلغاء الكل
+$("#select-all").on("change", function() {
+  const isChecked = $(this).is(":checked");
+  $(".product-checkbox").prop("checked", isChecked);
+  if (isChecked) {
+    addAllToList();
+  } else {
+    printList = [];
+    renderPrintList();
+  }
+});
+
+// تحديد منفرد
+$(".product-checkbox").on("change", function() {
+  addAllToList();
+});
+
+// بحث سريع
+$("#search-product").on("input", function() {
+  const q = $(this).val().toLowerCase();
+  $("tbody tr").each(function() {
+    const name = $(this).find("td:nth-child(3)").text().toLowerCase();
+    $(this).toggle(name.includes(q) || q === "");
+  });
+});
+
+function addAllToList() {
+  printList = [];
+  $(".product-checkbox:checked").each(function() {
+    const productId = $(this).data("product-id");
+    const qty = parseInt($(`.barcode-qty[data-product-id="${productId}"]`).val()) || 1;
+    const barcodeVal = String($(this).data("product-barcode") || "");
+    if (!barcodeVal) return; // تجاهل أي منتج بلا باركود
+    const product = {
+      id: productId,
+      name: $(this).data("product-name"),
+      barcode: barcodeVal,
+      price: parseFloat($(this).data("product-price")),
+      qty: qty
+    };
+    
+    for (let i = 0; i < qty; i++) {
+      printList.push(product);
+    }
+  });
+  
+  renderPrintList();
+}
+
+function renderPrintList() {
+  const list = $("#print-list");
+  list.empty();
+  
+  if (printList.length === 0) {
+    list.html('<div class="text-muted text-center p-3">لا يوجد عناصر</div>');
+    $("#print-all-btn, #clear-print-btn").prop("disabled", true);
+    $("#total-labels").text("0");
+    return;
+  }
+  
+  $("#print-all-btn, #clear-print-btn").prop("disabled", false);
+  
+  const grouped = {};
+  printList.forEach((p) => {
+    if (!grouped[p.id]) grouped[p.id] = { product: p, count: 0 };
+    grouped[p.id].count++;
+  });
+  
+  Object.keys(grouped).forEach((productId) => {
+    const { product, count } = grouped[productId];
+    list.append(`
+      <div class="border-bottom p-2 mb-2">
+        <strong class="d-block">${product.name}</strong>
+        <small class="text-muted">الباركود: ${product.barcode}</small><br>
+        <small>السعر: ${product.price.toFixed(2)} ج.م</small><br>
+        <div class="mt-2">
+          <span class="badge bg-primary">${count} ملصقة</span>
+          <button class="btn btn-sm btn-outline-danger float-start" onclick="removePrintItem(${productId})">حذف</button>
+        </div>
+      </div>
+    `);
+  });
+  
+  $("#total-labels").text(printList.length);
+}
+
+function removePrintItem(productId) {
+  printList = printList.filter(p => p.id !== productId);
+  $(`.product-checkbox[data-product-id="${productId}"]`).prop("checked", false);
+  renderPrintList();
+}
+
+$("#clear-print-btn").on("click", function() {
+  if (confirm("هل تريد مسح قائمة الطباعة؟")) {
+    printList = [];
+    $(".product-checkbox").prop("checked", false);
+    $("#select-all").prop("checked", false);
+    renderPrintList();
+  }
+});
+
+$("#print-all-btn").on("click", function() {
+  if (printList.length === 0) {
+    alert("قائمة الطباعة فارغة");
+    return;
+  }
+  
+  let html = `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>طباعة باركود</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      direction: rtl;
+      font-family: 'Courier New', 'Segoe UI', monospace;
+      background: white;
+      padding: 5px;
+    }
+    .barcode-label {
+      width: 80mm;
+      height: 60mm;
+      border: 1px solid #999;
+      padding: 5px;
+      margin: 3px;
+      page-break-inside: avoid;
+      display: inline-block;
+      text-align: center;
+      vertical-align: top;
+      background: white;
+      overflow: hidden;
+    }
+    .barcode-label .name {
+      font-weight: bold;
+      font-size: 11px;
+      margin-bottom: 3px;
+      white-space: normal;
+      line-height: 1.2;
+      height: 16px;
+      overflow: hidden;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+    }
+    .barcode-label .barcode-image {
+      margin: 4px 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+    .barcode-label .barcode-image img {
+      max-width: 100%;
+      max-height: 28px;
+      margin: 0 auto;
+    }
+    .barcode-label .price {
+      font-size: 13px;
+      font-weight: bold;
+      color: #d32f2f;
+      margin-bottom: 2px;
+    }
+    .barcode-label .code {
+      font-size: 7px;
+      color: #666;
+      margin-top: 1px;
+    }
+    /* fallback text barcode style */
+    .barcode-label .barcode {
+      font-size: 16px;
+      font-weight: bold;
+      font-family: 'Courier New', monospace;
+      letter-spacing: 1px;
+      margin: 6px 0;
+      line-height: 1.3;
+      word-break: break-all;
+    }
+    @media print {
+      body {
+        margin: 0;
+        padding: 2px;
+        background: white;
+      }
+      .barcode-label {
+        page-break-inside: avoid;
+        margin: 2px;
+        border: 1px solid #000;
+      }
+    }
+  </style>
+</head>
+<body>`;
+  
+  // جلب الصور المشفرة للباركود ثم طباعة
+  let completedRequests = 0;
+  const uniqueCodes = [...new Set(printList.map(p => String(p.barcode || "")))];
+  const barcodeImages = {};
+  
+  uniqueCodes.forEach((code) => {
+    $.ajax({
+      url: `/api/barcode-image/${code}`,
+      method: 'GET',
+      success: function(data) {
+        if (data && data.success) {
+          barcodeImages[code] = data.image;
+        }
+        completedRequests++;
+        if (completedRequests === uniqueCodes.length) {
+          // كل الصور جاهزة، الآن يمكن عمل الطباعة
+          completeBarcodeHTML();
+        }
+      },
+      error: function() {
+        console.error('فشل جلب الباركود', code);
+        completedRequests++;
+        if (completedRequests === uniqueCodes.length) {
+          completeBarcodeHTML();
+        }
+      }
+    });
+  });
+  
+  function completeBarcodeHTML() {
+    printList.forEach((p) => {
+      const codeStr = String(p.barcode || "");
+      const img = barcodeImages[codeStr] || '';
+      if (img) {
+        html += `
+        <div class="barcode-label">
+          <div class="name">${p.name}</div>
+          <div class="barcode-image">
+            <img src="${img}" alt="${p.barcode}">
+          </div>
+          <div class="price">${p.price.toFixed(2)} ج.م</div>
+          <div class="code">${codeStr}</div>
+        </div>`;
+      } else {
+        // fallback إذا فشل جلب الصورة
+        const barcodeSpaced = codeStr.split('').join(' ');
+        html += `
+        <div class="barcode-label">
+          <div class="name">${p.name}</div>
+          <div class="barcode">|${barcodeSpaced}|</div>
+          <div class="price">${p.price.toFixed(2)} ج.م</div>
+          <div class="code">${codeStr}</div>
+        </div>`;
+      }
+    });
+    
+    html += `</body></html>`;
+    
+    const frame = document.getElementById("print-frame");
+        const finishPrint = () => {
+          try {
+            if (frame.contentWindow) {
+              frame.contentWindow.focus();
+              frame.contentWindow.print();
+              return;
+            }
+            throw new Error('iframe missing');
+          } catch (e) {
+            // فتح نافذة احتياطية للطباعة
+            const w = window.open('', '_blank');
+            if (!w) {
+              alert('المتصفح منع الطباعة (النوافذ المنبثقة)');
+              return;
+            }
+            w.document.write(html);
+            w.document.close();
+            w.focus();
+            w.print();
+            setTimeout(() => w.close(), 500);
+          }
+        };
+        frame.onload = finishPrint;
+        frame.srcdoc = html;
+        // احتياط في حال onload لم يُستدعَ
+        setTimeout(finishPrint, 800);
+  }
+});
+</script>
+
+<style>
+  .product-checkbox {
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+  }
+  .barcode-qty {
+    text-align: center;
+  }
+  code {
+    background: #f5f5f5;
+    padding: 2px 4px;
+    border-radius: 3px;
+  }
+</style>
+{% endblock %}

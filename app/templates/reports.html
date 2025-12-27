@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .stats-card {background: linear-gradient(135deg, #ffe4ed, #ffd6ec); border: none; box-shadow: 0 6px 20px rgba(255, 105, 180, 0.08);} /* soft pink emphasis */
+  .stats-value {font-size: 1.35rem; font-weight: 700; color: #b10f6a;}
+  .table thead th {background: #fff3f8; border-bottom: 2px solid #ffd6ec; color: #b10f6a;}
+  .pill {display: inline-block; padding: 4px 10px; border-radius: 999px; font-size: 0.85rem; background: #ffe4ed; color: #b10f6a;}
+  .card {border: 1px solid #ffe4ed; box-shadow: 0 4px 14px rgba(0,0,0,0.03);} 
+  .section-title {font-weight: 700; color: #b10f6a;}
+</style>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="card stats-card h-100 p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="section-title">مبيعات يومية</span>
+        <span class="pill">اليوم</span>
+      </div>
+      <div class="stats-value">{{ '%.2f'|format(data.daily) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stats-card h-100 p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="section-title">مبيعات أسبوعية</span>
+        <span class="pill">آخر 7 أيام</span>
+      </div>
+      <div class="stats-value">{{ '%.2f'|format(data.weekly) }}</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card stats-card h-100 p-3">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <span class="section-title">مبيعات شهرية</span>
+        <span class="pill">الشهر الحالي</span>
+      </div>
+      <div class="stats-value">{{ '%.2f'|format(data.monthly) }}</div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="section-title">الأكثر مبيعًا</span>
+        <span class="pill">أفضل 10</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>المنتج</th><th class="text-end">الكمية</th></tr></thead>
+          <tbody>
+            {% for name, qty in data.best %}
+            <tr>
+              <td>{{ name }}</td>
+              <td class="text-end fw-semibold">{{ qty }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="2" class="text-center p-3">لا بيانات</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span class="section-title">مخزون منخفض</span>
+        <span class="pill">أولوية</span>
+      </div>
+      <div class="card-body p-0">
+        <table class="table mb-0 align-middle">
+          <thead><tr><th>المنتج</th><th class="text-end">المخزون</th><th class="text-end">الحد الأدنى</th></tr></thead>
+          <tbody>
+            {% for p in data.low_stock %}
+            <tr>
+              <td>{{ p.name }}</td>
+              <td class="text-end">{{ p.stock_qty }}</td>
+              <td class="text-end">{{ p.min_stock_alert }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3" class="text-center p-3">لا يوجد</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">
+    <span class="section-title">آخر الشيفتات</span>
+    <span class="pill">الحركة الأخيرة</span>
+  </div>
+  <div class="card-body p-0">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>الكاشير</th><th>فتح</th><th>إغلاق</th><th class="text-end">مبيعات</th><th class="text-end">فرق</th></tr></thead>
+      <tbody>
+        {% for s in data.shifts %}
+        <tr>
+          <td>{{ s.cashier_name }}</td>
+          <td>{{ s.start_time.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{% if s.end_time %}{{ s.end_time.strftime('%Y-%m-%d %H:%M') }}{% else %}-{% endif %}</td>
+          <td class="text-end">{{ '%.2f'|format(s.sales_total or 0) }}</td>
+          <td class="text-end">{{ '%.2f'|format(s.diff_cash or 0) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center p-3">لا شيفتات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

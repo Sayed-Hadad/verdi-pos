@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="fw-bold">تنبيهات منخفضة</div>
+      {% for p in low %}
+        <div class="small text-warning">{{ p.name }} ({{ p.stock_qty }})</div>
+      {% else %}
+        <div class="text-muted">لا توجد</div>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <div class="fw-bold">منتهية</div>
+      {% for p in zero %}
+        <div class="small text-danger">{{ p.name }}</div>
+      {% else %}
+        <div class="text-muted">لا يوجد</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="card mt-4">
+  <div class="card-header">قائمة المخزون</div>
+  <div class="card-body p-0">
+    <table class="table mb-0 align-middle">
+      <thead><tr><th>#</th><th>الاسم</th><th>المخزون</th><th>الحد الأدنى</th><th>باركود</th><th class="text-center" style="width:140px">إجراءات</th></tr></thead>
+      <tbody>
+        {% for p in products %}
+        <tr>
+          <td>{{ p.id }}</td><td>{{ p.name }}</td>
+          <td>{{ p.stock_qty }}</td><td>{{ p.min_stock_alert }}</td>
+          <td>{{ p.barcode }}</td>
+          <td class="text-center">
+            <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.products') }}">تعديل</a>
+            <form class="d-inline" method="post" action="{{ url_for('main.product_delete', pid=p.id) }}" onsubmit="return confirm('حذف المنتج؟');">
+              <button class="btn btn-outline-danger btn-sm">حذف</button>
+            </form>
+          </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center p-3">لا بيانات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

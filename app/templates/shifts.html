@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3 mb-4">
+  <div class="col-md-6">
+    <div class="card p-3">
+      <div class="fw-bold mb-2">فتح شيفت</div>
+      <form method="post">
+        <input type="hidden" name="action" value="open">
+        <label class="form-label">رصيد الافتتاح</label>
+        <input name="opening_cash" type="number" step="0.1" class="form-control mb-3" required>
+        <button class="btn btn-primary">فتح</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card p-3">
+      <div class="fw-bold mb-2">إغلاق شيفت</div>
+      <form method="post">
+        <input type="hidden" name="action" value="close">
+        <div class="mb-2">
+          <label class="form-label">اختيار الشيفت</label>
+          <select name="shift_id" class="form-select" required>
+            {% for s in shifts %}
+            <option value="{{ s.id }}">{{ s.id }} - {{ s.cashier_name }} ({{ s.start_time.strftime('%Y-%m-%d %H:%M') }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <label class="form-label">رصيد الإغلاق</label>
+        <input name="closing_cash" type="number" step="0.1" class="form-control mb-2" required>
+        <label class="form-label">إجمالي المبيعات</label>
+        <input name="sales_total" type="number" step="0.1" class="form-control mb-3" required>
+        <button class="btn btn-danger">إغلاق</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-header">سجل الشيفتات</div>
+  <div class="card-body p-0">
+    <table class="table mb-0">
+      <thead><tr><th>#</th><th>الكاشير</th><th>اليوم</th><th>التاريخ</th><th>فتح</th><th>إغلاق</th><th>فرق النقدية</th></tr></thead>
+      <tbody>
+        {% for s in shifts %}
+        {% set day_names = ['الإثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد'] %}
+        {% set day_name = day_names[s.start_time.weekday()] %}
+        <tr>
+          <td>{{ s.id }}</td>
+          <td>{{ s.cashier_name }}</td>
+          <td>{{ day_name }}</td>
+          <td>{{ s.start_time.strftime('%Y-%m-%d') }}</td>
+          <td>{{ s.start_time.strftime('%H:%M') }}</td>
+          <td>{% if s.end_time %}{{ s.end_time.strftime('%H:%M') }}{% else %}-{% endif %}</td>
+          <td>{{ '%.2f'|format(s.diff_cash or 0) }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="7" class="text-center p-3">لا بيانات</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

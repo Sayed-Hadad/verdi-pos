@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>فاتورة</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; }
+    body {
+      direction: rtl;
+      font-family: 'Courier New', monospace;
+      background: #f5f5f5;
+    }
+    .receipt-container {
+      width: 80mm;
+      margin: 20px auto;
+      background: white;
+      padding: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    .receipt-header {
+      text-align: center;
+      border-bottom: 2px dashed #000;
+      padding-bottom: 10px;
+      margin-bottom: 10px;
+    }
+    .receipt-header img {
+      max-height: 50px;
+      margin-bottom: 5px;
+    }
+    .receipt-header h2 {
+      font-size: 16px;
+      font-weight: bold;
+      margin: 5px 0;
+    }
+    .receipt-header p {
+      font-size: 11px;
+      margin: 2px 0;
+    }
+    .receipt-items {
+      font-size: 12px;
+      margin: 10px 0;
+    }
+    .receipt-items table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .receipt-items th,
+    .receipt-items td {
+      padding: 4px 2px;
+      border: none;
+      text-align: right;
+    }
+    .receipt-items th {
+      border-top: 1px solid #000;
+      border-bottom: 1px solid #000;
+      font-weight: bold;
+      font-size: 10px;
+    }
+    .receipt-items tr:last-child td {
+      border-bottom: 2px solid #000;
+    }
+    .receipt-totals {
+      margin: 10px 0;
+      border-bottom: 2px dashed #000;
+      padding-bottom: 10px;
+    }
+    .receipt-totals div {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin: 3px 0;
+    }
+    .receipt-totals .total-line {
+      font-weight: bold;
+      font-size: 14px;
+      border-top: 1px solid #000;
+      padding-top: 5px;
+    }
+    .receipt-footer {
+      text-align: center;
+      font-size: 11px;
+      margin-top: 10px;
+    }
+    .receipt-footer p {
+      margin: 3px 0;
+    }
+    @media print {
+      body {
+        background: white;
+        margin: 0;
+        padding: 0;
+      }
+      .receipt-container {
+        width: 80mm !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        padding: 10px !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+<div class="receipt-container">
+  <div class="receipt-header">
+    {% if logo_path %}<img src="{{ logo_path }}" alt="logo">{% endif %}
+    <h2>Verdi Desouk</h2>
+    <p>متجر الملابس الحديث</p>
+    <p>فاتورة بيع</p>
+  </div>
+
+  <div class="receipt-items">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:35%">الصنف</th>
+          <th style="width:15%">كمية</th>
+          <th style="width:20%">السعر</th>
+          <th style="width:30%">الإجمالي</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in items %}
+        <tr>
+          <td>{{ i.product_name[:15] }}</td>
+          <td>{{ i.qty }}</td>
+          <td>{{ '%.2f'|format(i.price) }}</td>
+          <td>{{ '%.2f'|format(i.total) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="receipt-totals">
+    <div>
+      <span>المجموع:</span>
+      <span>{{ '%.2f'|format(sale.total) }}</span>
+    </div>
+    {% if sale.discount > 0 %}
+    <div>
+      <span>خصم:</span>
+      <span>-{{ '%.2f'|format(sale.discount) }}</span>
+    </div>
+    {% endif %}
+    {% if sale.tax > 0 %}
+    <div>
+      <span>ضريبة:</span>
+      <span>{{ '%.2f'|format(sale.tax) }}</span>
+    </div>
+    {% endif %}
+    <div class="total-line">
+      <span>الإجمالي النهائي:</span>
+      <span>{{ '%.2f'|format(sale.net_total) }} ج.م</span>
+    </div>
+  </div>
+
+  <div class="receipt-footer">
+    <p>رقم الفاتورة: {{ sale.id }}</p>
+    <p>التاريخ: {{ sale.created_at.strftime('%Y-%m-%d %H:%M') }}</p>
+    <p>الكاشير: {{ sale.cashier }}</p>
+    {% if sale.customer_id %}<p>العميل: {{ sale.customer.name if sale.customer else 'زائر' }}</p>{% endif %}
+    <p>====================</p>
+    <p>شكراً لتسوقكم!</p>
+    <p>نتمنى لكم يوماً سعيداً</p>
+  </div>
+</div>
+
+<div class="no-print text-center mt-4">
+  <button class="btn btn-primary" onclick="window.print()">🖨️ طباعة</button>
+  <a href="{{ url_for('main.pos') }}" class="btn btn-outline-secondary">↩️ عودة للكاشير</a>
+</div>
+</body>
+</html>

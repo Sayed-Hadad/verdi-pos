@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-3">
+      <div class="card-header bg-primary text-white">🧾 فاتورة مورد جديدة</div>
+      <div class="card-body">
+        <form id="invoice-form" method="post">
+          <div class="row g-2 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">المورد</label>
+              <select class="form-select" name="supplier_id" required>
+                <option value="">اختر المورد</option>
+                {% for s in suppliers %}<option value="{{ s.id }}">{{ s.name }}</option>{% endfor %}
+              </select>
+              <small class="text-muted">يجب اختيار المورد قبل الحفظ</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">المدفوع</label>
+              <input class="form-control" name="paid" type="number" min="0" step="0.01" value="0">
+              <small class="text-muted">يمكن تركه 0 إذا لم يُدفع شيء</small>
+            </div>
+          </div>
+
+          <div class="row g-2 align-items-end mb-3">
+            <div class="col-md-6">
+              <label class="form-label">المنتج</label>
+              <select class="form-select" id="product-select">
+                <option value="">اختر منتج</option>
+                {% for p in products %}<option value="{{ p.id }}" data-name="{{ p.name }}">{{ p.name }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-3">
+              <label class="form-label">الكمية</label>
+              <input class="form-control" type="number" id="qty" min="1" value="1">
+            </div>
+            <div class="col-3">
+              <label class="form-label">التكلفة</label>
+              <input class="form-control" type="number" id="cost" min="0" step="0.01" value="0">
+            </div>
+            <div class="col-12">
+              <button class="btn btn-primary w-100" type="button" id="add-item">إضافة للصنف</button>
+            </div>
+          </div>
+
+          <div class="table-responsive mb-3">
+            <table class="table table-sm align-middle" id="items-table">
+              <thead class="table-light">
+                <tr><th>المنتج</th><th>كمية</th><th>تكلفة</th><th>الإجمالي</th><th></th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+
+          <input type="hidden" name="items_json" id="items-json">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <strong>الإجمالي: <span id="total">0.00</span> ج.م</strong>
+              <span class="badge bg-light text-dark ms-2" id="items-count">0 صنف</span>
+            </div>
+            <button class="btn btn-success" type="submit">حفظ الفاتورة</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card shadow-sm">
+      <div class="card-header bg-light">أحدث فواتير الموردين</div>
+      <div class="card-body p-0">
+        <table class="table table-striped mb-0 align-middle">
+          <thead class="table-light"><tr><th>#</th><th>المورد</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th class="text-center" style="width:100px">عرض</th></tr></thead>
+          <tbody>
+            {% for inv in invoices %}
+            <tr>
+              <td>{{ inv.id }}</td>
+              <td>{{ supplier_map.get(inv.supplier_id, inv.supplier_id) }}</td>
+              <td>{{ '%.2f'|format(inv.total) }}</td>
+              <td>{{ '%.2f'|format(inv.paid) }}</td>
+              <td>{{ '%.2f'|format(inv.remaining) }}</td>
+              <td class="text-center">
+                <a class="btn btn-outline-primary btn-sm" href="{{ url_for('main.supplier_invoice_view', invoice_id=inv.id) }}">عرض</a>
+              </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6" class="text-center p-3">لا يوجد فواتير بعد</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const items = [];
+const tbody = document.querySelector('#items-table tbody');
+const totalEl = document.getElementById('total');
+const itemsJson = document.getElementById('items-json');
+
+document.getElementById('add-item').addEventListener('click', () => {
+  const select = document.getElementById('product-select');
+  const pid = select.value;
+  const name = select.options[select.selectedIndex]?.dataset?.name || '';
+  const qty = parseInt(document.getElementById('qty').value) || 0;
+  const cost = parseFloat(document.getElementById('cost').value) || 0;
+  if (!pid || qty <= 0) { alert('اختر منتج وكمية'); return; }
+  const item = {id: Number(pid), name, qty, cost};
+  items.push(item);
+  renderItems();
+});
+
+function renderItems() {
+  tbody.innerHTML = '';
+  let total = 0;
+  items.forEach((it, idx) => {
+    const line = it.qty * it.cost;
+    total += line;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${it.name}</td><td>${it.qty}</td><td>${it.cost.toFixed(2)}</td><td>${line.toFixed(2)}</td><td><button type="button" class="btn btn-sm btn-outline-danger" data-idx="${idx}">حذف</button></td>`;
+    tbody.appendChild(tr);
+  });
+  totalEl.textContent = total.toFixed(2);
+  itemsJson.value = JSON.stringify(items.map(it => ({...it, total: it.qty * it.cost})));
+  const countLabel = document.getElementById('items-count');
+  if (countLabel) {
+    const count = items.length;
+    countLabel.textContent = count ? `${count} صنف` : '0 صنف';
+  }
+  tbody.querySelectorAll('button').forEach(btn => btn.onclick = () => { items.splice(Number(btn.dataset.idx),1); renderItems(); });
+}
+
+document.getElementById('invoice-form').addEventListener('submit', (e) => {
+  if (!items.length) { e.preventDefault(); alert('أضف أصنافًا أولاً'); }
+});
+</script>
+{% endblock %}
